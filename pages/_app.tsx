@@ -9,7 +9,6 @@ function MyApp({ Component, pageProps }: AppProps) {
     <ThirdwebProvider
       desiredChainId={desiredChainId}
       authConfig={{
-        // Set this to your domain to prevent signature malleability attacks.
         domain: "http://localhost:3000/",
         authUrl: "/api/auth",
       }}

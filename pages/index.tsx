@@ -4,7 +4,7 @@ import Head from "next/head";
 import GenerateBalls from "../components/generate-balls";
 import Header from "../components/header";
 import Subscribers from "../components/subscribers";
-const CountDown = dynamic(import("../components/count-down"), {
+const CountDown = dynamic(import("../components/countDown/count-down"), {
   ssr: false,
 });
 

@@ -3,6 +3,7 @@ import { useAddress } from "@thirdweb-dev/react";
 import toast, { Toaster } from "react-hot-toast";
 import useLottery from "../hooks/useLottery";
 import { BigNumber, ethers } from "ethers";
+import { generateColor } from "../utils/functions";
 
 type manualBalls = {
   num: number;
@@ -15,48 +16,34 @@ const GenerateBalls = () => {
   const [balls, setBalls] = useState<number[]>([]);
   const [btn, setBtn] = useState<string>("");
   const [manualBalls, setManualBalls] = useState<Array<manualBalls>>([]);
+  const [profit, setProfit] = useState<string>("");
 
-  function generateColor() {
-    const hexArray = [
-      0,
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      "A",
-      "B",
-      "C",
-      "D",
-      "E",
-      "F",
-    ];
-    let code = "";
-    for (let i = 0; i < 6; i++) {
-      code += hexArray[Math.floor(Math.random() * 16)];
-    }
-    return `#${code}`;
+  if (error) {
+    return <div>{error}</div>;
   }
+
+  useEffect(() => {
+    const getBalance = async () => {
+      if (!contract) return;
+      const balance = await contract?.getBalance();
+      setProfit(ethers.utils.formatEther(BigNumber.from(balance).toString()));
+    };
+    getBalance();
+  }, [contract]);
 
   const randomPick = () => {
     if (!address) return toast.error("Please connect your wallet");
-    // talk with contract to get the generated numbers
+    setBalls([]);
     toast.promise(
       new Promise(async (resolve, reject) => {
         try {
           const result = await contract?.generate_winning_balls();
           if (!result) return toast.error("Cannot generate balls");
-          const generated_balls = await contract?.get_winning_balls();
-          console.log(generated_balls);
-          const _balls = generated_balls.map((ball: BigNumber) =>
+          const _balls = result.map((ball: BigNumber) =>
             BigNumber.from(ball).toNumber()
           );
           setBalls(_balls);
-          resolve(generated_balls);
+          resolve(result);
           setBtn("generate");
         } catch (err) {
           console.log(err);
@@ -71,55 +58,54 @@ const GenerateBalls = () => {
     );
   };
 
-  const mine = (btnClicked: string) => {
-    if (!address) return toast.error("Please connect your wallet");
-    if (btnClicked === "generate") {
-      toast.promise(
-        new Promise(async (resolve, reject) => {
-          try {
-            const result = await contract?.mine_balls(balls, {
-              value: ethers.utils.parseEther("0.0001"),
-            });
+  const storeTicket = (_balls: Array<number>) => {
+    toast.promise(
+      new Promise(async (resolve, reject) => {
+        try {
+          const result = await contract?.mine_balls(_balls, {
+            value: ethers.utils.parseEther("0.001"),
+          });
+          contract?.on("MintBalls", async () => {
+            const balance = await contract?.getBalance();
+            setProfit(
+              ethers.utils.formatEther(BigNumber.from(balance).toString())
+            );
+            setManualBalls([]);
+            setBalls([]);
+            setBtn("");
             resolve(result);
-          } catch (err) {
-            console.log(err);
-            reject(err);
-          }
-        }),
-        {
-          loading: "Mining...",
-          success: <b>Mined successfully</b>,
-          error: <b>Something went wrong</b>,
+          });
+        } catch (err) {
+          console.log(err);
+          reject(err);
         }
-      );
+      }),
+      {
+        loading: "Mining...",
+        success: <b>Mined successfully</b>,
+        error: <b>Something went wrong</b>,
+      }
+    );
+  };
+
+  const mine = (btnClicked: string) => {
+    if (btnClicked === "generate") {
+      storeTicket(balls);
     }
     if (btnClicked === "manual") {
       const _balls = manualBalls.map((ball) => ball.num);
-      toast.promise(
-        new Promise(async (resolve, reject) => {
-          try {
-            const result = await contract?.mine_balls(_balls, {
-              value: ethers.utils.parseEther("0.0001"),
-            });
-            resolve(result);
-          } catch (err) {
-            console.log(err);
-            reject(err);
-          }
-        }),
-        {
-          loading: "Mining...",
-          success: <b>Mined successfully</b>,
-          error: <b>Something went wrong</b>,
-        }
-      );
+      setBalls(_balls);
+      storeTicket(_balls);
     }
   };
   return (
     <>
       <section className="w-full flex flex-col space-y-5 justify-center items-center">
-        <h2 className="text-3xl font-bold">Participate in the raffle</h2>
-        <div className="flex justify-between items-center w-[400px]">
+        <h2 className="text-xl md:text-3xl font-bold">
+          Participate in the raffle to increase the value
+        </h2>
+        <h3 className="text-xl font-bold">Withdrawal value: {profit} ETH </h3>
+        <div className="flex justify-between items-center md:w-[400px] w-full">
           <button
             onClick={randomPick}
             className="relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
@@ -131,6 +117,7 @@ const GenerateBalls = () => {
           <button
             onClick={() => {
               if (!address) return toast.error("Please connect your wallet");
+              setBalls([]);
               setBtn("manual");
             }}
             className="relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800"
@@ -146,7 +133,7 @@ const GenerateBalls = () => {
         {btn === "generate" && (
           <>
             <div className="flex justify-between items-center w-[300px]">
-              <h2 className="text-3xl font-bold">Your tickets</h2>
+              <h2 className="text-xl md:text-3xl font-bold">Your tickets</h2>
               <button
                 onClick={() => setBtn("")}
                 className="relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800"
@@ -183,7 +170,7 @@ const GenerateBalls = () => {
           btn === "manual" && (
             <>
               <div className="flex justify-between items-center w-[300px]">
-                <h2 className="text-3xl font-bold">Pick numbers</h2>
+                <h2 className="text-xl md:text-3xl font-bold">Pick numbers</h2>
                 <button
                   onClick={() => setBtn("")}
                   className="relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800"
@@ -195,7 +182,7 @@ const GenerateBalls = () => {
               </div>
 
               <div className="grid grid-cols-4 md:grid-cols-8  gap-1 md:gap-2 w-[300px] md:w-auto">
-                {[...Array(64)].map((_, i) => (
+                {[...Array(65)].map((_, i) => (
                   <div
                     key={i}
                     className={`w-[50px] h-[50px] ${
@@ -205,22 +192,24 @@ const GenerateBalls = () => {
                     }  bg-gray-500  rounded-full flex items-center justify-center text-white text-xl font-bold  hover:bg-slate-700`}
                     onClick={() =>
                       manualBalls.length < 6
-                        ? setManualBalls([
+                        ? manualBalls.findIndex((item: any) => item.num === i) <
+                            0 &&
+                          setManualBalls([
                             ...manualBalls,
-                            { num: i + 1, color: generateColor() },
+                            { num: i, color: generateColor() },
                           ])
-                        : alert("You can only pick 6 numbers")
+                        : toast.error("You can only pick 6 numbers")
                     }
                     style={{
                       backgroundColor:
-                        manualBalls.findIndex((n) => n.num === i + 1) !== -1
+                        manualBalls.findIndex((n) => n.num === i) !== -1
                           ? manualBalls[
-                              manualBalls.findIndex((n) => n.num === i + 1)
+                              manualBalls.findIndex((n) => n.num === i)
                             ].color
                           : "",
                     }}
                   >
-                    {i + 1}
+                    {i}
                   </div>
                 ))}
               </div>

@@ -15,6 +15,6 @@
     "jsx": "preserve",
     "incremental": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "components/count-down.tsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "components/countDown/count-down.tsx"],
   "exclude": ["node_modules"]
 }
