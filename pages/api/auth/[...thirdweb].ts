@@ -1,5 +1,9 @@
 import { ThirdwebAuth } from "@thirdweb-dev/auth/next";
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export const { ThirdwebAuthHandler, getUser } = ThirdwebAuth({
   // Using environment variables to secure your private key is a security vulnerability.
   // Learn how to store your private key securely:
