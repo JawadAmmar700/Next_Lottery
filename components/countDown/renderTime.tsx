@@ -1,5 +1,4 @@
 import React from "react";
-import { RenderTimeProps } from "../../types";
 import Completed from "./completed";
 
 const RenderTime = ({

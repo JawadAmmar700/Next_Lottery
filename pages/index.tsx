@@ -4,9 +4,25 @@ import Head from "next/head";
 import GenerateBalls from "../components/generate-balls";
 import Header from "../components/header";
 import Subscribers from "../components/subscribers";
+import { getUser } from "./api/auth/[...thirdweb]";
 const CountDown = dynamic(import("../components/countDown/count-down"), {
   ssr: false,
 });
+
+export const getServerSideProps = async (ctx: any) => {
+  const user = await getUser(ctx.req);
+  if (!user) {
+    return {
+      redirect: {
+        destination: "/signIn",
+        permanent: false,
+      },
+    };
+  }
+  return {
+    props: {},
+  };
+};
 
 const Home: NextPage = () => {
   return (

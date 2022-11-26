@@ -4,7 +4,6 @@ import { BigNumber, ethers } from "ethers";
 import { generateColor } from "../../utils/functions";
 import useLottery from "../../hooks/useLottery";
 import toast from "react-hot-toast";
-import { Balls } from "../../types";
 
 declare let window: any;
 

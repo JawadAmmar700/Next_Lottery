@@ -1,9 +1,9 @@
-export type Balls = {
+type Balls = {
   num: number;
   color: string;
 };
 
-export type RenderTimeProps = {
+type RenderTimeProps = {
   days: number;
   hours: number;
   minutes: number;
