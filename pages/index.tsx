@@ -9,21 +9,6 @@ const CountDown = dynamic(import("../components/countDown/count-down"), {
   ssr: false,
 });
 
-export const getServerSideProps = async (ctx: any) => {
-  const user = await getUser(ctx.req);
-  if (!user) {
-    return {
-      redirect: {
-        destination: "/signIn",
-        permanent: false,
-      },
-    };
-  }
-  return {
-    props: {},
-  };
-};
-
 const Home: NextPage = () => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-5 bg-black">
